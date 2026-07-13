@@ -1,0 +1,12 @@
+[package]
+name = "os-host-api"
+version = "0.1.0"
+edition = "2021"
+description = "Pluggable host API for OS emulation and the thin runtime."
+
+[dependencies]
+binary-io = { path = "../../../../binary-io" }
+tunnel = { path = "../../../../tunnel" }
+os-ctx = { path = "../os-ctx" }
+
+[dev-dependencies]

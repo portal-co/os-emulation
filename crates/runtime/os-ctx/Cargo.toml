@@ -1,0 +1,7 @@
+[package]
+name = "os-ctx"
+version = "0.1.0"
+edition = "2024"
+description = "OS context abstraction for recompilers and emulators."
+
+[dependencies]
