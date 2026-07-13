@@ -4,6 +4,7 @@ members = [
     "crates/runtime/os-ctx",
     "crates/runtime/os-host-api",
     "crates/target/os-target-core",
+    "crates/target/os-target-wax",
     "crates/build/os-build",
     "crates/abi/os-abi-spec",
     "crates/abi/os-abi-stubs",

@@ -1,0 +1,16 @@
+[package]
+name = "os-target-wax"
+version = "0.1.0"
+edition = "2021"
+description = "WASM/wax-core Backend implementation for os-target-core OsOp IR."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]
+os-target-core = { path = "../os-target-core" }
+wax-core = { git = "https://github.com/portal-co/wax.git" }
+wasm-encoder = { version = "0.240.0", default-features = false }
+
+[features]
+default = []
+memory64 = []
