@@ -25,4 +25,7 @@ See `../plans/shared-os-emulation-plan.md` for the current plan and phase breakd
 
 ## Consumer integration docs
 
+- `docs/integrations/speet.md` — Speet ahead-of-time recompiler integration.
 - `docs/integrations/vane.md` — Vane JS / interpreter surface.
+- `docs/integrations/wasm-blitz.md` — Future wasm-blitz native backend contract.
+- `docs/integrations/private-os-handlers.md` — Future private kernel contract.
