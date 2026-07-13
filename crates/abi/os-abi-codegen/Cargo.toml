@@ -1,0 +1,20 @@
+[package]
+name = "os-abi-codegen"
+version = "0.1.0"
+edition = "2021"
+description = "Generate checked-in ABI redirect stub Rust from BridgeSupport specs."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[[bin]]
+name = "os-abi-codegen"
+path = "src/main.rs"
+
+[dependencies]
+os-abi-spec = { path = "../os-abi-spec" }
+os-abi-stubs = { path = "../os-abi-stubs" }
+os-host-api = { path = "../../runtime/os-host-api" }
+binary-io = { path = "../../../../binary-io" }
+
+[dev-dependencies]
+tempfile = "3"

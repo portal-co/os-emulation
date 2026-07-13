@@ -1,0 +1,10 @@
+[package]
+name = "os-build"
+version = "0.1.0"
+edition = "2021"
+description = "Compiler/builder glue contract for OS emulation code generation."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]
+os-target-core = { path = "../../target/os-target-core" }

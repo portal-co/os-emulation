@@ -1,0 +1,9 @@
+[package]
+name = "os-target-core"
+version = "0.1.0"
+edition = "2021"
+description = "Speet-neutral stack-machine IR and Backend trait for OS emulation code generation."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]

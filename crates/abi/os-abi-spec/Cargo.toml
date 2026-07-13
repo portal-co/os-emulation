@@ -1,0 +1,10 @@
+[package]
+name = "os-abi-spec"
+version = "0.1.0"
+edition = "2021"
+description = "Generic ABI description ingestion for redirect-stub generation."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]
+quick-xml = "0.37"

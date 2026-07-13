@@ -3,4 +3,9 @@ resolver = "3"
 members = [
     "crates/runtime/os-ctx",
     "crates/runtime/os-host-api",
+    "crates/target/os-target-core",
+    "crates/build/os-build",
+    "crates/abi/os-abi-spec",
+    "crates/abi/os-abi-stubs",
+    "crates/abi/os-abi-codegen",
 ]
