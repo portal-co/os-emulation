@@ -8,7 +8,7 @@ use alloc::vec::Vec;
 use core::fmt::{self, Display, Write as FmtWrite};
 use core::marker::PhantomData;
 
-use os_target_core::{Backend, MemWidth, OsOp};
+use os_target_core::{Backend, MemWidth, NativeBackend, OsOp};
 use portal_pc_asm_common::types::reg::Reg;
 use portal_solutions_asm_x86_64::out::iced::IcedWriter;
 use portal_solutions_asm_x86_64::out::{Writer as X64Writer, WriterCore as X64WriterCore};
@@ -265,6 +265,13 @@ where
     fn leak_label(&self, s: String) -> L {
         L::from(Box::leak(s.into_boxed_str()))
     }
+}
+
+impl<W, L> NativeBackend for X86_64SysVBackend<W, L>
+where
+    W: X64WriterCore<()> + X64Writer<L, ()>,
+    L: Display + Ord + Clone + From<&'static str>,
+{
 }
 
 impl<W, L> Backend for X86_64SysVBackend<W, L>

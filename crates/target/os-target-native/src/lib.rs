@@ -10,9 +10,17 @@ extern crate alloc;
 
 #[cfg(feature = "x86_64")]
 pub mod x86_64;
+#[cfg(feature = "aarch64")]
+pub mod aarch64;
+#[cfg(feature = "riscv64")]
+pub mod riscv64;
 
 #[cfg(feature = "x86_64")]
 pub use x86_64::{
     BinaryX86_64SysVBackend, SysVHelpers, TextX86_64SysVBackend, X86_64SysVBackend,
     X86_64SysVConfig,
 };
+#[cfg(feature = "aarch64")]
+pub use aarch64::{AArch64SysVBackend, BinaryAArch64SysVBackend};
+#[cfg(feature = "riscv64")]
+pub use riscv64::{BinaryRiscv64Backend, Riscv64Backend};

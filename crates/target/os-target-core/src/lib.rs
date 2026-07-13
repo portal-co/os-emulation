@@ -74,3 +74,28 @@ impl Backend for Vec<OsOp> {
         self.push(op);
     }
 }
+
+/// Capability subtrait for backends that emit native machine code.
+///
+/// Such backends expose native registers, direct memory access, and native
+/// function call/return enough to implement OS glue without relying on a
+/// managed runtime or WASM engine. The actual register/memory emission is
+/// performed by the implementor; this trait merely marks the capability.
+pub trait NativeBackend: Backend {}
+
+/// Capability subtrait for backends that emit WebAssembly or WASM-derived
+/// code, exposing locals, imports, calls, and memory control.
+pub trait WasmBackend: Backend {}
+
+/// Capability subtrait for backends that support WASM-GC features such as
+/// structs, arrays, references, and casts.
+pub trait WasmGcBackend: WasmBackend {}
+
+/// Capability subtrait for backends that emit JavaScript or a JavaScript
+/// interface, exposing JS string literals, helper calls, `await`, and property
+/// access.
+pub trait JsBackend: Backend {}
+
+/// Capability subtrait for backends that emit direct JVM/DEX/ECMAScript-like
+/// bytecode (future).
+pub trait JadeByteBackend: Backend {}

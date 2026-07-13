@@ -5,7 +5,7 @@ edition = "2024"
 description = "Native assembly Backend implementations for the OsOp IR"
 
 [features]
-default = ["x86_64"]
+default = ["x86_64", "aarch64", "riscv64"]
 x86_64 = ["dep:portal-solutions-asm-x86-64"]
 aarch64 = ["dep:portal-solutions-asm-aarch64"]
 riscv64 = ["dep:portal-solutions-asm-riscv64"]
