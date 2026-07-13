@@ -15,3 +15,7 @@ See `../plans/shared-os-emulation-plan.md` for the current plan and phase breakd
 - `crates/abi/os-abi-spec` — generic ABI description model and `CallingConvention`.
 - `crates/abi/os-abi-stubs` — checked-in redirect stub registry and native emitters.
 - `crates/abi/os-abi-codegen` — generator that turns `AbiSpec` into checked-in stub Rust sources.
+- `crates/page/os-page` — shared runtime memory/paging traits and `MemorySpec`.
+- `crates/page/os-page-codegen` — compile-time memory/paging emitters (scaffolding).
+- `crates/emit/os-syscall-emit` — generic syscall dispatch table data model.
+- `crates/emit/os-linux-wasi` — RV64 Linux → WASI preview1 syscall mapping.
