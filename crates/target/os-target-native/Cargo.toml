@@ -4,10 +4,20 @@ version = "0.1.0"
 edition = "2024"
 description = "Native assembly Backend implementations for the OsOp IR"
 
+[features]
+default = ["x86_64"]
+x86_64 = ["dep:portal-solutions-asm-x86-64"]
+aarch64 = ["dep:portal-solutions-asm-aarch64"]
+riscv64 = ["dep:portal-solutions-asm-riscv64"]
+
 [dependencies]
 os-target-core = { path = "../os-target-core" }
-portal-solutions-asm-x86-64 = { git = "https://github.com/portal-co/asm-arch.git" }
 portal-pc-asm-common = { git = "https://github.com/portal-co/asm-common.git" }
+
+portal-solutions-asm-x86-64 = { git = "https://github.com/portal-co/asm-arch.git", optional = true, features = ["iced"] }
+portal-solutions-asm-aarch64 = { git = "https://github.com/portal-co/asm-arch.git", optional = true, features = ["bin-backend"] }
+portal-solutions-asm-riscv64 = { git = "https://github.com/portal-co/asm-arch.git", optional = true, features = ["rv-asm-backend"] }
 
 [dev-dependencies]
 os-page = { path = "../../page/os-page" }
+unicorn-engine = "2.1.5"
