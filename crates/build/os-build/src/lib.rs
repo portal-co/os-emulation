@@ -24,16 +24,16 @@ use os_target_core::{Backend, GuestAddr, MemWidth};
 ///
 /// This is the *emit-side* view of memory; the separate runtime
 /// implementation that backs generated code lives in `os-page`.
-pub trait GuestMemory {
+pub trait GuestMemory<B: Backend> {
     /// Readable page size in bytes for the address space being reasoned
     /// about during code generation.
     fn emit_page_size(&self) -> u64;
     /// Emit the address translation / data access sequence for a read of
     /// the requested width at the current top-of-stack address.
-    fn emit_load(&mut self, backend: &mut impl Backend, width: MemWidth, signed: bool);
+    fn emit_load(&mut self, backend: &mut B, width: MemWidth, signed: bool);
     /// Emit the address translation / data access sequence for a write of
     /// the requested width at the current top-of-stack address.
-    fn emit_store(&mut self, backend: &mut impl Backend, width: MemWidth);
+    fn emit_store(&mut self, backend: &mut B, width: MemWidth);
 }
 
 // ---------------------------------------------------------------------------
@@ -137,7 +137,7 @@ pub trait RedirectCodegen<B: Backend> {
 /// Implemented by concrete recompilers/builders that emit OS emulation
 /// glue code for a backend `B`.
 pub trait BuildGlue<B: Backend>:
-    GuestMemory + MemoryCodegen<B> + SyscallCodegen<B> + RedirectCodegen<B>
+    GuestMemory<B> + MemoryCodegen<B> + SyscallCodegen<B> + RedirectCodegen<B>
 {
     /// Emit the `OsOp` sequence that jumps to a guest address.
     ///
