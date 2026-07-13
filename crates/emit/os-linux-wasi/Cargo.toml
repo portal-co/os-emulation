@@ -1,0 +1,10 @@
+[package]
+name = "os-linux-wasi"
+version = "0.1.0"
+edition = "2021"
+description = "RV64 Linux syscall to WASI preview1 mapping for shared OS emulation."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]
+os-syscall-emit = { path = "../os-syscall-emit" }

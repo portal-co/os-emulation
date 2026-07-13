@@ -1,0 +1,12 @@
+[package]
+name = "os-page-codegen"
+version = "0.1.0"
+edition = "2021"
+description = "Compile-time memory/paging code generation for shared OS emulation backends."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]
+os-target-core = { path = "../../target/os-target-core" }
+os-page       = { path = "../os-page" }
+os-build      = { path = "../../build/os-build" }

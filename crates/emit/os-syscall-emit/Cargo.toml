@@ -1,0 +1,9 @@
+[package]
+name = "os-syscall-emit"
+version = "0.1.0"
+edition = "2021"
+description = "Generic syscall dispatch table and per-entry recipes for shared OS emulation."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]

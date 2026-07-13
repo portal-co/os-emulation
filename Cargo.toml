@@ -8,4 +8,8 @@ members = [
     "crates/abi/os-abi-spec",
     "crates/abi/os-abi-stubs",
     "crates/abi/os-abi-codegen",
+    "crates/page/os-page",
+    "crates/page/os-page-codegen",
+    "crates/emit/os-syscall-emit",
+    "crates/emit/os-linux-wasi",
 ]

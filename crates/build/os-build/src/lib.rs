@@ -14,6 +14,8 @@ extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
 use os_target_core::{Backend, GuestAddr, MemWidth};
+pub use os_page::MemorySpec;
+pub use os_syscall_emit::{MemoryStore, ParamSource, SavePair, SyscallEntry, SyscallTable};
 
 // ---------------------------------------------------------------------------
 // Compile-time memory abstraction
@@ -39,15 +41,6 @@ pub trait GuestMemory<B: Backend> {
 // ---------------------------------------------------------------------------
 // Shared data-model types used by codegen traits
 // ---------------------------------------------------------------------------
-
-/// High-level memory-system description shared across compile-time and
-/// runtime memory layers.
-#[derive(Debug, Clone, Default)]
-pub struct MemorySpec {
-    pub page_size_log2: u8,
-    pub levels: u8,
-    pub physical_address_bits: u8,
-}
 
 /// A single guest memory access operation.
 #[derive(Debug, Clone, Copy)]
@@ -80,23 +73,6 @@ pub struct OsGlueSpec {
     pub memory: MemorySpec,
 }
 
-/// Shared description of a syscall table entry. The backend-specific
-/// renderers turn this into dispatch code.
-#[derive(Debug, Clone)]
-pub struct SyscallTable<B: Backend> {
-    pub entries: Vec<SyscallEntry<B>>,
-}
-
-/// One syscall dispatch slot.
-#[derive(Debug, Clone)]
-pub struct SyscallEntry<B: Backend> {
-    pub number: u64,
-    pub may_await: bool,
-    /// Backend-specific emission function: called by the backend renderer
-    /// to append the handler body for this syscall.
-    pub emit_handler: fn(&mut B),
-}
-
 /// Minimal placeholder for an ABI function surface. `os-abi-spec` owns the
 /// fully fleshed-out type; `os-build` only needs it in signatures.
 #[derive(Debug, Clone, Default)]
@@ -118,7 +94,7 @@ pub trait MemoryCodegen<B: Backend> {
 /// Compile-time syscall/osfuncall code generator.
 pub trait SyscallCodegen<B: Backend> {
     /// Emit syscall-number dispatch for the given syscall table.
-    fn emit_syscall_dispatch(&mut self, backend: &mut B, table: &SyscallTable<B>);
+    fn emit_syscall_dispatch(&mut self, backend: &mut B, table: &SyscallTable);
 
     /// Emit a host-call stub for a redirected ABI function.
     fn emit_osfuncall_stub(&mut self, backend: &mut B, spec: &AbiSpec, symbol: &str);

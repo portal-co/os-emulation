@@ -8,3 +8,5 @@ license-file = "../../../../speet/COPYING.md"
 
 [dependencies]
 os-target-core = { path = "../../target/os-target-core" }
+os-syscall-emit = { path = "../../emit/os-syscall-emit" }
+os-page       = { path = "../../page/os-page" }

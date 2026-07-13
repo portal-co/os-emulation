@@ -1,0 +1,9 @@
+[package]
+name = "os-page"
+version = "0.1.0"
+edition = "2021"
+description = "Shared runtime memory/paging traits and data model for OS emulation."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]
