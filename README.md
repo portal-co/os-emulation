@@ -9,6 +9,7 @@ See `../plans/shared-os-emulation-plan.md` for the current plan and phase breakd
 ## Current crates
 
 - `crates/runtime/os-ctx` — guest `OS` / `Ctx` runtime traits.
+- `crates/runtime/os-async` — async `AsyncOS` / `AsyncCtx` / `AsyncHostApi` surface.
 - `crates/runtime/os-host-api` — pluggable host API surface (`HostApi`, `ImportManifest`).
 - `crates/target/os-target-core` — speet-neutral `OsOp` stack-machine IR and `Backend` trait.
 - `crates/build/os-build` — compiler-glue contract (`BuildGlue<B>`, `MemoryCodegen`, `SyscallCodegen`, `RedirectCodegen`).

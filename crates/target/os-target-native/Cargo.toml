@@ -1,0 +1,13 @@
+[package]
+name = "os-target-native"
+version = "0.1.0"
+edition = "2024"
+description = "Native assembly Backend implementations for the OsOp IR"
+
+[dependencies]
+os-target-core = { path = "../os-target-core" }
+portal-solutions-asm-x86-64 = { git = "https://github.com/portal-co/asm-arch.git" }
+portal-pc-asm-common = { git = "https://github.com/portal-co/asm-common.git" }
+
+[dev-dependencies]
+os-page = { path = "../../page/os-page" }

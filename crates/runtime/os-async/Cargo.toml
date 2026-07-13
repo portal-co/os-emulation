@@ -1,0 +1,8 @@
+[package]
+name = "os-async"
+version = "0.1.0"
+edition = "2024"
+description = "Async variants of OS, Ctx, and HostApi surfaces"
+
+[dependencies]
+os-ctx = { path = "../os-ctx" }

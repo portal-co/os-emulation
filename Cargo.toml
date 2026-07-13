@@ -2,9 +2,11 @@
 resolver = "3"
 members = [
     "crates/runtime/os-ctx",
+    "crates/runtime/os-async",
     "crates/runtime/os-host-api",
     "crates/target/os-target-core",
     "crates/target/os-target-wax",
+    "crates/target/os-target-native",
     "crates/build/os-build",
     "crates/abi/os-abi-spec",
     "crates/abi/os-abi-stubs",
