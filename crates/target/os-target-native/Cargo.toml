@@ -21,3 +21,17 @@ portal-solutions-asm-riscv64 = { git = "https://github.com/portal-co/asm-arch.gi
 [dev-dependencies]
 os-page = { path = "../../page/os-page" }
 unicorn-engine = "2.1.5"
+
+# Each Unicorn integration test imports its architecture's optional assembler
+# dependency, so only compile it when that architecture is enabled.
+[[test]]
+name = "unicorn_x86_64"
+required-features = ["x86_64"]
+
+[[test]]
+name = "unicorn_aarch64"
+required-features = ["aarch64"]
+
+[[test]]
+name = "unicorn_riscv64"
+required-features = ["riscv64"]
