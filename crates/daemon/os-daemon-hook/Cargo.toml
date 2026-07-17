@@ -1,0 +1,9 @@
+[package]
+name = "os-daemon-hook"
+version = "0.1.0"
+edition = "2021"
+description = "Generates the minimal C execve-interposition stub linked into guest/target binaries; backend-agnostic via a wire-level backend-id parameter."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]

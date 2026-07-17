@@ -1,0 +1,12 @@
+[package]
+name = "os-codesign-macho"
+version = "0.1.0"
+edition = "2021"
+description = "Shells out to /usr/bin/codesign to sign rewritten Mach-O executables per the hardened-runtime library-validation schema (real-identity + library-constraint, or ad-hoc + cdhash fallback)."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]
+
+[dev-dependencies]
+tempfile = "3"

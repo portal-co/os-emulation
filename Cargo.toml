@@ -15,4 +15,11 @@ members = [
     "crates/page/os-page-codegen",
     "crates/emit/os-syscall-emit",
     "crates/emit/os-linux-wasi",
+    "crates/daemon/os-transform-core",
+    "crates/daemon/os-daemon-protocol",
+    "crates/daemon/os-daemon",
+    "crates/daemon/os-daemon-hook",
+    "crates/daemon/os-rewrite-macho",
+    "crates/daemon/os-codesign-macho",
+    "crates/daemon/os-rewrite-elf",
 ]

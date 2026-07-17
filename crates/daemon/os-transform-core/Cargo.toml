@@ -1,0 +1,9 @@
+[package]
+name = "os-transform-core"
+version = "0.1.0"
+edition = "2021"
+description = "Backend-agnostic contract for on-the-fly binary transformation (AOT recompile, JIT, dylib/so rewrite)."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]

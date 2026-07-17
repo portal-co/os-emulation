@@ -18,6 +18,9 @@ implementation lives in `os-emulation`:
 | `speet-abi-codegen` | `os-abi-codegen` |
 | `speet-syscall` | `os-syscall-emit` |
 | `speet-linux-wasi` | `os-linux-wasi` |
+| `speet-rtd` (daemon binary/lib) | `os-daemon` + `os-transform-core` |
+| `speet-runtime::rtd_protocol` | `os-daemon-protocol` |
+| `speet-runtime::execve_hook` | `os-daemon-hook` |
 
 Each shim is a tiny `Cargo.toml` plus a `src/lib.rs` that re-exports the
 `os-emulation` crate (`pub use os_*::*;`). Speet's internal crates therefore
@@ -80,9 +83,59 @@ cargo check --all
 cargo test -p speet-module-builder
 cargo test -p speet-syscall
 cargo test -p speet-linux-wasi
+cargo test -p speet-rtd -p speet-runtime
+```
+
+`os-emulation`'s own daemon crates are tested standalone:
+
+```bash
+cd os-emulation
+cargo test -p os-daemon-protocol -p os-daemon -p os-transform-core
+cargo test -p os-rewrite-macho -p os-codesign-macho   # macOS
+cargo test -p os-rewrite-elf                          # Linux/BSD
 ```
 
 Full E2E corpus tests remain in Speet and verify the whole pipeline end-to-end.
+
+## Daemon and transform backends
+
+`os-transform-core::TransformBackend` is the backend-agnostic contract for
+on-the-fly binary transformation: given a target path, produce (or fetch
+from cache) a runnable, never-mutate-the-input artifact. `os-daemon` holds a
+registry of these backends and dispatches each `Obtain` request to whichever
+one the client names — the daemon itself never hardcodes a single
+transformation strategy.
+
+Two backends currently implement `TransformBackend`, both living in speet
+(mirroring how `os-build::BuildGlue<B>` implementations stay with their
+consumer):
+
+- `speet_runtime::IntegratedNativeRuntime` — the existing ahead-of-time
+  full-recompile pipeline, registered under `BackendId::INTEGRATED_RECOMPILE`
+  (`"integrated"`).
+- `speet_rtd::simple_rewrite::SimpleRewriteBackend` — the dylib/so rewriter
+  for macOS, Linux, and BSD, registered under `BackendId::SIMPLE_REWRITE`
+  (`"simple-rewrite"`) whenever `SIMPLE_REWRITE_SHIM` is configured. It
+  builds on OS-neutral `os-emulation` primitives:
+  - `os-rewrite-macho` — Mach-O `LC_LOAD_DYLIB` rewriter (macOS).
+  - `os-rewrite-elf` — ELF `DT_NEEDED`/`DT_RUNPATH` rewriter (Linux/BSD).
+  - `os-codesign-macho` — hardened-runtime codesigning implementing the two
+    methods from `hardened-runtime-library-validation-schema.md` (real
+    identity + library constraint, or ad-hoc + cdhash fallback for local
+    development).
+
+  Every backend's contract is "read-only on the input, always emit a new
+  cached output" — the rewriter never patches a binary in place; it stages
+  a rewritten (and, on macOS, re-signed) copy under a private cache
+  directory and returns that path for the caller to `execve` directly.
+
+`speet-rtd` registers both backends by default; `Request::Obtain{backend}`
+selects which one handles a given path, and `Request::ListBackends` reports
+what's currently registered. `speet_runtime::execve_hook::generate_execve_hook_c()`
+and `os_daemon_hook::generate_execve_hook_c()` generate the same minimal C
+stub either way — the backend id is a generation-time parameter, not a wire
+literal — so the embedded execve hook works unmodified regardless of which
+backend produced the binary it's linked into.
 
 ## Current limitations and future work
 

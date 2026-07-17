@@ -1,0 +1,9 @@
+[package]
+name = "os-daemon-protocol"
+version = "0.1.0"
+edition = "2021"
+description = "Wire protocol for the OS-emulation transform daemon (backend-selectable Obtain)."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]

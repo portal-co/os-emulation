@@ -1,0 +1,12 @@
+[package]
+name = "os-rewrite-macho"
+version = "0.1.0"
+edition = "2021"
+description = "Rewrites a thin 64-bit Mach-O executable's load commands to add/replace an LC_LOAD_DYLIB, always producing a new file."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]
+
+[dev-dependencies]
+tempfile = "3"

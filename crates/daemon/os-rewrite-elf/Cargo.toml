@@ -1,0 +1,12 @@
+[package]
+name = "os-rewrite-elf"
+version = "0.1.0"
+edition = "2021"
+description = "Rewrites an ELF executable's DT_NEEDED/rpath dynamic-section entries to inject a shared object, always producing a new file. Shared by libc-based Linux and BSDs (no code-signing/library-validation gate on either)."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]
+
+[dev-dependencies]
+tempfile = "3"

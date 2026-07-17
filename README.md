@@ -22,6 +22,13 @@ See `../plans/shared-os-emulation-plan.md` for the current plan and phase breakd
 - `crates/page/os-page-codegen` — compile-time memory/paging emitters (scaffolding).
 - `crates/emit/os-syscall-emit` — generic syscall dispatch table data model.
 - `crates/emit/os-linux-wasi` — RV64 Linux → WASI preview1 syscall mapping.
+- `crates/daemon/os-transform-core` — backend-agnostic `TransformBackend` trait for on-the-fly binary transformation (AOT recompile, JIT, dylib/so rewrite).
+- `crates/daemon/os-daemon-protocol` — wire protocol for the transform daemon, with explicit backend selection.
+- `crates/daemon/os-daemon` — generic Unix-socket daemon dispatching to registered `TransformBackend`s.
+- `crates/daemon/os-daemon-hook` — generator for the minimal, backend-agnostic C execve-interposition stub linked into guest/target binaries.
+- `crates/daemon/os-rewrite-macho` — Mach-O `LC_LOAD_DYLIB` rewriter for macOS; always emits a new cached executable.
+- `crates/daemon/os-rewrite-elf` — ELF `DT_NEEDED`/rpath rewriter shared by libc-based Linux and BSDs.
+- `crates/daemon/os-codesign-macho` — macOS hardened-runtime codesigning (real-identity + library-constraint, or ad-hoc + cdhash fallback) for rewritten executables.
 
 ## Consumer integration docs
 
