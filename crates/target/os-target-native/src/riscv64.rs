@@ -8,10 +8,12 @@ use alloc::vec::Vec;
 use core::fmt::Display;
 use core::marker::PhantomData;
 
-use os_target_core::{Backend, OsOp};
+use os_target_core::{Backend, MemWidth, OsOp};
 use portal_pc_asm_common::types::mem::MemorySize;
 use portal_pc_asm_common::types::reg::Reg;
 use portal_solutions_asm_riscv64::out::arg::{ArgKind, MemArgKind as RvMemArgKind};
+
+use crate::NativeHelpers;
 use portal_solutions_asm_riscv64::out::rv_asm_backend::RvAsmWriter;
 use portal_solutions_asm_riscv64::out::{Writer as RvWriter, WriterCore as RvWriterCore};
 use portal_solutions_asm_riscv64::{RegisterClass, RiscV64Arch};
@@ -33,7 +35,7 @@ where
     W: RvWriterCore<()> + RvWriter<L, ()>,
 {
     cfg: Riscv64Config,
-    writer: W,
+    pub writer: W,
     _label: PhantomData<L>,
 }
 
@@ -42,11 +44,15 @@ pub type BinaryRiscv64Backend = Riscv64Backend<RvAsmWriter<Label>, Label>;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Riscv64Config {
     pub emit_frame: bool,
+    pub helpers: NativeHelpers,
 }
 
 impl Default for Riscv64Config {
     fn default() -> Self {
-        Self { emit_frame: true }
+        Self {
+            emit_frame: true,
+            helpers: NativeHelpers::DEFAULTS,
+        }
     }
 }
 
@@ -109,9 +115,9 @@ where
             // addi sp, sp, -16
             let _ = RvWriterCore::addi(&mut self.writer, &mut (), arch, &sp, &sp, -16);
             // sd ra, 0(sp)
-            let _ = RvWriterCore::sd(&mut self.writer, &mut (), arch, &ra, &stack_mem(0));
+            let _ = RvWriterCore::sd(&mut self.writer, &mut (), arch, &ra, &sp_mem(0));
             // sd fp, 8(sp)
-            let _ = RvWriterCore::sd(&mut self.writer, &mut (), arch, &fp, &stack_mem(8));
+            let _ = RvWriterCore::sd(&mut self.writer, &mut (), arch, &fp, &sp_mem(8));
             // mv fp, sp
             let _ = RvWriterCore::mv(&mut self.writer, &mut (), arch, &fp, &sp);
         }
@@ -123,10 +129,13 @@ where
             let sp = self.sp();
             let ra = self.ra();
             let fp = self.fp();
+            // Realign SP to the saved frame record before restoring it.
+            // mv sp, fp
+            let _ = RvWriterCore::mv(&mut self.writer, &mut (), arch, &sp, &fp);
             // ld fp, 8(sp)
-            let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &fp, &stack_mem(8));
+            let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &fp, &sp_mem(8));
             // ld ra, 0(sp)
-            let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &ra, &stack_mem(0));
+            let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &ra, &sp_mem(0));
             // addi sp, sp, 16
             let _ = RvWriterCore::addi(&mut self.writer, &mut (), arch, &sp, &sp, 16);
             // ret -> jalr zero, ra, 0
@@ -134,8 +143,34 @@ where
         }
     }
 
-    fn helper_name(s: &'static str) -> Label {
-        s
+    fn load_label(&self, width: MemWidth, signed: bool) -> L {
+        let name = match (width, signed) {
+            (MemWidth::W8, false) => self.cfg.helpers.load_u8,
+            (MemWidth::W8, true) => self.cfg.helpers.load_i8,
+            (MemWidth::W16, false) => self.cfg.helpers.load_u16,
+            (MemWidth::W16, true) => self.cfg.helpers.load_i16,
+            (MemWidth::W32, false) => self.cfg.helpers.load_u32,
+            (MemWidth::W32, true) => self.cfg.helpers.load_i32,
+            (MemWidth::W64, false) => self.cfg.helpers.load_u64,
+            (MemWidth::W64, true) => self.cfg.helpers.load_u64,
+            (MemWidth::W128, _) => "os_load_u128",
+        };
+        L::from(name)
+    }
+
+    fn store_label(&self, width: MemWidth) -> L {
+        let name = match width {
+            MemWidth::W8 => self.cfg.helpers.store_u8,
+            MemWidth::W16 => self.cfg.helpers.store_u16,
+            MemWidth::W32 => self.cfg.helpers.store_u32,
+            MemWidth::W64 => self.cfg.helpers.store_u64,
+            MemWidth::W128 => "os_store_u128",
+        };
+        L::from(name)
+    }
+
+    fn ecall_label(&self) -> L {
+        L::from(self.cfg.helpers.ecall)
     }
 
     fn leak_label(&self, s: String) -> L {
@@ -166,58 +201,45 @@ where
             OsOp::PushU64(v) => {
                 let _ = RvWriterCore::li(&mut self.writer, &mut (), arch, &a0, v);
                 let _ = RvWriterCore::addi(&mut self.writer, &mut (), arch, &sp, &sp, -8);
-                let _ = RvWriterCore::sd(&mut self.writer, &mut (), arch, &a0, &stack_mem(0));
+                let _ = RvWriterCore::sd(&mut self.writer, &mut (), arch, &a0, &sp_mem(0));
             }
             OsOp::PushU32(v) => {
                 let v = (v as i32) as u64; // sign-extend to 64 bits.
                 let _ = RvWriterCore::li(&mut self.writer, &mut (), arch, &a0, v);
                 let _ = RvWriterCore::addi(&mut self.writer, &mut (), arch, &sp, &sp, -8);
-                let _ = RvWriterCore::sd(&mut self.writer, &mut (), arch, &a0, &stack_mem(0));
+                let _ = RvWriterCore::sd(&mut self.writer, &mut (), arch, &a0, &sp_mem(0));
             }
             OsOp::Pop => {
-                let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &a0, &stack_mem(0));
+                let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &a0, &sp_mem(0));
                 let _ = RvWriterCore::addi(&mut self.writer, &mut (), arch, &sp, &sp, 8);
             }
-            OsOp::Load { .. } => {
+            OsOp::Load { width, signed } => {
                 // Pop address into a0, call helper, push result.
-                let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &a0, &stack_mem(0));
+                let ra = self.ra();
+                let label = self.load_label(width, signed);
+                let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &a0, &sp_mem(0));
                 let _ = RvWriterCore::addi(&mut self.writer, &mut (), arch, &sp, &sp, 8);
-                let _ = RvWriter::jal_label(
-                    &mut self.writer,
-                    &mut (),
-                    arch,
-                    &a0,
-                    L::from(Self::helper_name("os_load_u64")),
-                );
+                let _ = RvWriter::jal_label(&mut self.writer, &mut (), arch, &ra, label);
                 let _ = RvWriterCore::addi(&mut self.writer, &mut (), arch, &sp, &sp, -8);
-                let _ = RvWriterCore::sd(&mut self.writer, &mut (), arch, &a0, &stack_mem(0));
+                let _ = RvWriterCore::sd(&mut self.writer, &mut (), arch, &a0, &sp_mem(0));
             }
-            OsOp::Store { .. } => {
+            OsOp::Store { width } => {
                 // Pop address into a0, value into a1.
-                let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &a0, &stack_mem(0));
+                let ra = self.ra();
+                let label = self.store_label(width);
+                let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &a0, &sp_mem(0));
                 let _ = RvWriterCore::addi(&mut self.writer, &mut (), arch, &sp, &sp, 8);
-                let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &a1, &stack_mem(0));
+                let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &a1, &sp_mem(0));
                 let _ = RvWriterCore::addi(&mut self.writer, &mut (), arch, &sp, &sp, 8);
-                let _ = RvWriter::jal_label(
-                    &mut self.writer,
-                    &mut (),
-                    arch,
-                    &a1,
-                    L::from(Self::helper_name("os_store_u64")),
-                );
+                let _ = RvWriter::jal_label(&mut self.writer, &mut (), arch, &ra, label);
             }
             OsOp::Ecall { .. } => {
                 let ra = self.ra();
-                let _ = RvWriter::jal_label(
-                    &mut self.writer,
-                    &mut (),
-                    arch,
-                    &ra,
-                    L::from(Self::helper_name("os_ecall")),
-                );
+                let label = self.ecall_label();
+                let _ = RvWriter::jal_label(&mut self.writer, &mut (), arch, &ra, label);
             }
             OsOp::Jump { .. } => {
-                let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &a0, &stack_mem(0));
+                let _ = RvWriterCore::ld(&mut self.writer, &mut (), arch, &a0, &sp_mem(0));
                 let _ = RvWriterCore::addi(&mut self.writer, &mut (), arch, &sp, &sp, 8);
                 let _ = RvWriterCore::jalr(&mut self.writer, &mut (), arch, &zero, &a0, 0);
             }
@@ -236,10 +258,14 @@ where
     }
 }
 
-fn stack_mem(disp: i32) -> RvMemArgKind<ArgKind> {
+fn sp_mem(disp: i32) -> RvMemArgKind<ArgKind> {
+    mem(Reg(2), disp)
+}
+
+fn mem(base: Reg, disp: i32) -> RvMemArgKind<ArgKind> {
     RvMemArgKind::Mem {
         base: ArgKind::Reg {
-            reg: Reg(2),
+            reg: base,
             size: MemorySize::_64,
         },
         offset: None,

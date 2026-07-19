@@ -8,6 +8,8 @@
 
 extern crate alloc;
 
+pub mod native_helpers;
+
 #[cfg(feature = "x86_64")]
 pub mod x86_64;
 #[cfg(feature = "aarch64")]
@@ -24,3 +26,5 @@ pub use x86_64::{
 pub use aarch64::{AArch64SysVBackend, BinaryAArch64SysVBackend};
 #[cfg(feature = "riscv64")]
 pub use riscv64::{BinaryRiscv64Backend, Riscv64Backend};
+
+pub use native_helpers::NativeHelpers;

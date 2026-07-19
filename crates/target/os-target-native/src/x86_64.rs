@@ -14,49 +14,10 @@ use portal_solutions_asm_x86_64::out::iced::IcedWriter;
 use portal_solutions_asm_x86_64::out::{Writer as X64Writer, WriterCore as X64WriterCore};
 use portal_solutions_asm_x86_64::X64Arch;
 
-/// Names of the runtime helper functions that back memory/syscall operations.
-///
-/// The generated assembly calls these symbols; the linker must resolve them
-/// against a small SysV-compatible runtime shim.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SysVHelpers {
-    pub load_u8: &'static str,
-    pub load_i8: &'static str,
-    pub load_u16: &'static str,
-    pub load_i16: &'static str,
-    pub load_u32: &'static str,
-    pub load_i32: &'static str,
-    pub load_u64: &'static str,
-    pub store_u8: &'static str,
-    pub store_u16: &'static str,
-    pub store_u32: &'static str,
-    pub store_u64: &'static str,
-    pub ecall: &'static str,
-}
+use crate::NativeHelpers;
 
-impl SysVHelpers {
-    /// Default helper names usable with a hand-written SysV runtime shim.
-    pub const DEFAULTS: Self = Self {
-        load_u8: "os_load_u8",
-        load_i8: "os_load_i8",
-        load_u16: "os_load_u16",
-        load_i16: "os_load_i16",
-        load_u32: "os_load_u32",
-        load_i32: "os_load_i32",
-        load_u64: "os_load_u64",
-        store_u8: "os_store_u8",
-        store_u16: "os_store_u16",
-        store_u32: "os_store_u32",
-        store_u64: "os_store_u64",
-        ecall: "os_ecall",
-    };
-}
-
-impl Default for SysVHelpers {
-    fn default() -> Self {
-        Self::DEFAULTS
-    }
-}
+/// Compatibility alias: helper names are shared across all native backends.
+pub type SysVHelpers = NativeHelpers;
 
 /// Configuration for the x86-64 SysV ABI backend.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -119,7 +80,7 @@ where
     W: X64WriterCore<()> + X64Writer<L, ()>,
 {
     cfg: X86_64SysVConfig,
-    writer: W,
+    pub writer: W,
     _label: PhantomData<L>,
 }
 

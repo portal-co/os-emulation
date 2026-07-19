@@ -8,8 +8,10 @@ use alloc::vec::Vec;
 use core::fmt::Display;
 use core::marker::PhantomData;
 
-use os_target_core::{Backend, OsOp};
+use os_target_core::{Backend, MemWidth, OsOp};
 use portal_pc_asm_common::types::mem::MemorySize;
+
+use crate::NativeHelpers;
 use portal_pc_asm_common::types::reg::Reg;
 use portal_solutions_asm_aarch64::out::arg::{
     AddressingMode, ArgKind, MemArgKind as A64MemArgKind,
@@ -35,7 +37,7 @@ where
     W: A64WriterCore<()> + A64Writer<L, ()>,
 {
     cfg: AArch64SysVConfig,
-    writer: W,
+    pub writer: W,
     _label: PhantomData<L>,
 }
 
@@ -44,11 +46,15 @@ pub type BinaryAArch64SysVBackend = AArch64SysVBackend<AArch64Writer<Label>, Lab
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AArch64SysVConfig {
     pub emit_frame: bool,
+    pub helpers: NativeHelpers,
 }
 
 impl Default for AArch64SysVConfig {
     fn default() -> Self {
-        Self { emit_frame: true }
+        Self {
+            emit_frame: true,
+            helpers: NativeHelpers::DEFAULTS,
+        }
     }
 }
 
@@ -126,8 +132,12 @@ where
     fn emit_epilogue(&mut self) {
         if self.cfg.emit_frame {
             let arch = Self::arch();
+            let sp = self.sp();
             let fp = self.fp();
             let lr = self.lr();
+            // Realign SP to the saved frame record before popping it.
+            // mov sp, x29
+            let _ = A64WriterCore::mov(&mut self.writer, &mut (), arch, &sp, &fp);
             // ldp x29, x30, [sp], #16
             let _ = A64WriterCore::ldp(
                 &mut self.writer,
@@ -141,8 +151,34 @@ where
         }
     }
 
-    fn helper_name(s: &'static str) -> Label {
-        s
+    fn load_label(&self, width: MemWidth, signed: bool) -> L {
+        let name = match (width, signed) {
+            (MemWidth::W8, false) => self.cfg.helpers.load_u8,
+            (MemWidth::W8, true) => self.cfg.helpers.load_i8,
+            (MemWidth::W16, false) => self.cfg.helpers.load_u16,
+            (MemWidth::W16, true) => self.cfg.helpers.load_i16,
+            (MemWidth::W32, false) => self.cfg.helpers.load_u32,
+            (MemWidth::W32, true) => self.cfg.helpers.load_i32,
+            (MemWidth::W64, false) => self.cfg.helpers.load_u64,
+            (MemWidth::W64, true) => self.cfg.helpers.load_u64,
+            (MemWidth::W128, _) => "os_load_u128",
+        };
+        L::from(name)
+    }
+
+    fn store_label(&self, width: MemWidth) -> L {
+        let name = match width {
+            MemWidth::W8 => self.cfg.helpers.store_u8,
+            MemWidth::W16 => self.cfg.helpers.store_u16,
+            MemWidth::W32 => self.cfg.helpers.store_u32,
+            MemWidth::W64 => self.cfg.helpers.store_u64,
+            MemWidth::W128 => "os_store_u128",
+        };
+        L::from(name)
+    }
+
+    fn ecall_label(&self) -> L {
+        L::from(self.cfg.helpers.ecall)
     }
 
     fn leak_label(&self, s: String) -> L {
@@ -175,7 +211,7 @@ where
                     &mut (),
                     arch,
                     &x0,
-                    &stack_word_mem(AddressingMode::PreIndex, -8),
+                    &sp_word_mem(AddressingMode::PreIndex, -8),
                 );
             }
             OsOp::PushU32(v) => {
@@ -186,7 +222,7 @@ where
                     &mut (),
                     arch,
                     &x0,
-                    &stack_word_mem(AddressingMode::PreIndex, -8),
+                    &sp_word_mem(AddressingMode::PreIndex, -8),
                 );
             }
             OsOp::Pop => {
@@ -195,62 +231,50 @@ where
                     &mut (),
                     arch,
                     &x0,
-                    &stack_word_mem(AddressingMode::PostIndex, 8),
+                    &sp_word_mem(AddressingMode::PostIndex, 8),
                 );
             }
-            OsOp::Load { .. } => {
+            OsOp::Load { width, signed } => {
                 // Pop guest address into x0, call helper, push result onto stack.
+                let label = self.load_label(width, signed);
                 let _ = A64WriterCore::ldr(
                     &mut self.writer,
                     &mut (),
                     arch,
                     &x0,
-                    &stack_word_mem(AddressingMode::PostIndex, 8),
+                    &sp_word_mem(AddressingMode::PostIndex, 8),
                 );
-                let _ = A64Writer::bl_label(
-                    &mut self.writer,
-                    &mut (),
-                    arch,
-                    L::from(Self::helper_name("os_load_u64")),
-                );
+                let _ = A64Writer::bl_label(&mut self.writer, &mut (), arch, label);
                 let _ = A64WriterCore::str(
                     &mut self.writer,
                     &mut (),
                     arch,
                     &x0,
-                    &stack_word_mem(AddressingMode::PreIndex, -8),
+                    &sp_word_mem(AddressingMode::PreIndex, -8),
                 );
             }
-            OsOp::Store { .. } => {
+            OsOp::Store { width } => {
                 // Stack order: [value, address]. Pop address into x0, value into x1.
+                let label = self.store_label(width);
                 let _ = A64WriterCore::ldr(
                     &mut self.writer,
                     &mut (),
                     arch,
                     &x0,
-                    &stack_word_mem(AddressingMode::PostIndex, 8),
+                    &sp_word_mem(AddressingMode::PostIndex, 8),
                 );
                 let _ = A64WriterCore::ldr(
                     &mut self.writer,
                     &mut (),
                     arch,
                     &x1,
-                    &stack_word_mem(AddressingMode::PostIndex, 8),
+                    &sp_word_mem(AddressingMode::PostIndex, 8),
                 );
-                let _ = A64Writer::bl_label(
-                    &mut self.writer,
-                    &mut (),
-                    arch,
-                    L::from(Self::helper_name("os_store_u64")),
-                );
+                let _ = A64Writer::bl_label(&mut self.writer, &mut (), arch, label);
             }
             OsOp::Ecall { .. } => {
-                let _ = A64Writer::bl_label(
-                    &mut self.writer,
-                    &mut (),
-                    arch,
-                    L::from(Self::helper_name("os_ecall")),
-                );
+                let label = self.ecall_label();
+                let _ = A64Writer::bl_label(&mut self.writer, &mut (), arch, label);
             }
             OsOp::Jump { .. } => {
                 let _ = A64WriterCore::ldr(
@@ -258,7 +282,7 @@ where
                     &mut (),
                     arch,
                     &x0,
-                    &stack_word_mem(AddressingMode::PostIndex, 8),
+                    &sp_word_mem(AddressingMode::PostIndex, 8),
                 );
                 let _ = A64WriterCore::br(&mut self.writer, &mut (), arch, &x0);
             }
@@ -279,24 +303,18 @@ where
 
 
 
-fn stack_word_mem(mode: AddressingMode, disp: i32) -> A64MemArgKind<ArgKind> {
-    A64MemArgKind::Mem {
-        base: ArgKind::Reg {
-            reg: Reg(31),
-            size: MemorySize::_64,
-        },
-        offset: None,
-        disp,
-        size: MemorySize::_64,
-        reg_class: RegisterClass::Gpr,
-        mode,
-    }
+fn sp_word_mem(mode: AddressingMode, disp: i32) -> A64MemArgKind<ArgKind> {
+    word_mem(Reg(31), mode, disp)
 }
 
 fn stack_pair_mem(mode: AddressingMode, disp: i32) -> A64MemArgKind<ArgKind> {
+    word_mem(Reg(31), mode, disp)
+}
+
+fn word_mem(reg: Reg, mode: AddressingMode, disp: i32) -> A64MemArgKind<ArgKind> {
     A64MemArgKind::Mem {
         base: ArgKind::Reg {
-            reg: Reg(31),
+            reg,
             size: MemorySize::_64,
         },
         offset: None,
