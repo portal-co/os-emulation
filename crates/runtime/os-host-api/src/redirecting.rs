@@ -23,6 +23,8 @@ pub enum PltRedirect {
     /// live host image to alias against; see
     /// [`HostApi::supports_ambient_linking`].
     Ambient,
+    /// Resolve through the shared `os_shim_*` C core at link time (native shim).
+    NativeShim { core_symbol: String },
 }
 
 /// Wraps an inner [`HostApi`] and redirects selected guest externals to
