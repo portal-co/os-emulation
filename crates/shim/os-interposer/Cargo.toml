@@ -1,0 +1,25 @@
+[package]
+name = "os-interposer"
+version = "0.1.0"
+edition = "2021"
+description = "Buildable interposer dylib/so using os-shim-core + generated export bridges."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[lib]
+name = "os_interposer"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
+[features]
+default = []
+daemon = ["os-shim-core/daemon"]
+
+[dependencies]
+os-shim-core = { path = "../os-shim-core" }
+
+[build-dependencies]
+cc = "1"
+os-daemon-shim = { path = "../../daemon/os-daemon-shim" }
+os-shim-handler = { path = "../os-shim-handler" }
+os-abi-spec = { path = "../../abi/os-abi-spec" }

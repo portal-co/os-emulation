@@ -7,3 +7,6 @@ publish = false
 license-file = "../../../../speet/COPYING.md"
 
 [dependencies]
+os-daemon-shim = { path = "../os-daemon-shim" }
+os-shim-handler = { path = "../../shim/os-shim-handler" }
+os-abi-spec = { path = "../../abi/os-abi-spec" }

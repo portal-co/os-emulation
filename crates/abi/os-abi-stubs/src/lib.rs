@@ -79,6 +79,11 @@ fn bridgesupport_wasm_types(f: &os_abi_spec::AbiFunction) -> (Vec<WasmValType>, 
     (params, results)
 }
 
+/// Whether a checked-in redirect stub exists for `symbol` (PLT / suitability gate).
+pub fn has_wired_impl(symbol: &str) -> bool {
+    has_stub(symbol)
+}
+
 /// PLT-hook marshalling: checked-in stub first, then [`ImportManifest`] WASM
 /// param types for the intercept slot (e.g. `execve` → `__speet_execve`).
 pub fn plt_calling_convention(

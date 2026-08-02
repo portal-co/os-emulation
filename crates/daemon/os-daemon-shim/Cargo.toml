@@ -1,0 +1,11 @@
+[package]
+name = "os-daemon-shim"
+version = "0.1.0"
+edition = "2021"
+description = "Optional daemon plugin providing strong os_shim_execve override."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]
+os-abi-spec = { path = "../../abi/os-abi-spec" }
+os-shim-handler = { path = "../../shim/os-shim-handler" }

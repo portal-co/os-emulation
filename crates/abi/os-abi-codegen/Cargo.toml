@@ -14,6 +14,8 @@ path = "src/main.rs"
 os-abi-spec = { path = "../os-abi-spec" }
 os-abi-stubs = { path = "../os-abi-stubs" }
 os-host-api = { path = "../../runtime/os-host-api" }
+os-shim-handler = { path = "../../shim/os-shim-handler" }
+os-daemon-shim = { path = "../../daemon/os-daemon-shim" }
 binary-io = { path = "../../../../binary-io" }
 
 [dev-dependencies]

@@ -1,0 +1,10 @@
+[package]
+name = "os-shim-handler"
+version = "0.1.0"
+edition = "2021"
+description = "Pluggable shim handler registry for shared libc/libSystem C core implementations."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[dependencies]
+os-abi-spec = { path = "../../abi/os-abi-spec" }

@@ -19,6 +19,9 @@ fn run() -> Result<(), String> {
     let mut symbols: Vec<String> = Vec::new();
     let mut archs: Vec<StubArch> = Vec::new();
     let mut all_symbols = false;
+    let mut emit_c_core = false;
+    let mut emit_c_interposer = false;
+    let mut with_daemon = false;
 
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
@@ -51,6 +54,15 @@ fn run() -> Result<(), String> {
             "--all-symbols" => {
                 all_symbols = true;
             }
+            "--emit-c-core" => {
+                emit_c_core = true;
+            }
+            "--emit-c-interposer" => {
+                emit_c_interposer = true;
+            }
+            "--with-daemon" => {
+                with_daemon = true;
+            }
             "--help" | "-h" => {
                 print_help();
                 return Ok(());
@@ -78,6 +90,27 @@ fn run() -> Result<(), String> {
     };
     let files = generate(&spec, &config)?;
 
+    if emit_c_core || emit_c_interposer {
+        use os_abi_codegen::{generate_c, COutputKind};
+        let mut kinds = Vec::new();
+        if emit_c_core {
+            kinds.push(COutputKind::Core);
+        }
+        if emit_c_interposer {
+            kinds.push(COutputKind::InterposerBridge);
+        }
+        let c_files = generate_c(&spec, &config, &kinds, with_daemon)?;
+        fs::create_dir_all(&output).map_err(|e| e.to_string())?;
+        for file in &c_files {
+            let path = output.join(&file.path);
+            if let Some(parent) = path.parent() {
+                fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+            }
+            fs::write(&path, &file.contents).map_err(|e| e.to_string())?;
+            eprintln!("wrote {}", path.display());
+        }
+    }
+
     fs::create_dir_all(&output).map_err(|e| e.to_string())?;
     for file in &files {
         let path = output.join(&file.path);
@@ -100,6 +133,9 @@ Options:
   -s, --symbols LIST     Comma-separated checked-in / wired subset (default: write,exit)
   -a, --archs LIST       Comma-separated arch list: x86_64,aarch64 (default: both)
       --all-symbols      Emit every function in the spec (libc/libSystem baseline)
+      --emit-c-core      Also emit os_shim_* core C under core/
+      --emit-c-interposer Also emit interposer bridge C under interposer/
+      --with-daemon      Use daemon strong override for execve in C emission
   -h, --help             Show this help
 
 Scope (see AGENTS.md §9 and docs/future/abi-spec-redirects.md):

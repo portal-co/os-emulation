@@ -1,0 +1,19 @@
+[package]
+name = "os-shim-core"
+version = "0.1.0"
+edition = "2021"
+description = "Portable C shim core: shared os_shim_* implementations with weak BridgeSupport defaults."
+publish = false
+license-file = "../../../../speet/COPYING.md"
+
+[features]
+default = []
+daemon = ["dep:os-daemon-shim", "dep:os-shim-handler", "dep:os-abi-spec"]
+
+[dependencies]
+os-daemon-shim = { path = "../../daemon/os-daemon-shim", optional = true }
+os-shim-handler = { path = "../os-shim-handler", optional = true }
+os-abi-spec = { path = "../../abi/os-abi-spec", optional = true }
+
+[build-dependencies]
+cc = "1"
